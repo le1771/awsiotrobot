@@ -23,11 +23,21 @@ import time
 import paho.mqtt.client as paho
 import ssl
 
-ROOT_CA = "<PATH_TO_ROOT_CERT>"
-CERTIFICATE = "<PATH_TO_YOUR_CERT>"
-PRIVATE_KEY = "<PATH_TO_PRIVATE_KEY>"
-AWS_IOT_TOPIC = "<YOUR_IOT_TOPIC>"
-AWS_IOT_ENDPOINT = "<YOUR_IOT_ENDPOINT>"
+''' -utegration account
+'''
+ROOT_CA = "/home/blitz/certs/robotcerts/root-CA.crt"
+CERTIFICATE = "/home/blitz/certs/robotcerts/certificate.pem.crt"
+PRIVATE_KEY = "/home/blitz/certs/robotcerts/private.pem.key"
+AWS_IOT_TOPIC = "$aws/things/awsiotdemo/shadow/update"
+AWS_IOT_ENDPOINT = "a1j88xr8j1m132.iot.us-west-2.amazonaws.com"
+
+''' -personal aws account
+ROOT_CA = "/home/blitz/certs/root-CA.crt"
+CERTIFICATE = "/home/blitz/certs/certificate.pem.crt"
+PRIVATE_KEY = "/home/blitz/certs/private.pem.key"
+AWS_IOT_TOPIC = "$aws/things/awsiotdemo/shadow/update"
+AWS_IOT_ENDPOINT = "https://a2if9o4gwp4cjc.iot.us-east-1.amazonaws.com/things/awsiotdemo/shadow"
+'''
 
 '''
 AWS IoT Listener sends data to AWS IoT via MQTT.
@@ -99,7 +109,7 @@ if __name__ == "__main__":
     controller = Leap.Controller()
     controller.add_listener(aws_iot_listener)
 
-    print "To quit, press enter."
+    print ("To quit, press enter.")
     try:
         sys.stdin.readline()
     except KeyboardInterrupt:

@@ -3,11 +3,11 @@
 import paho.mqtt.client as mqtt
 import ssl
 
-ROOT_CA = "<PATH_TO_ROOT_CERT>"
-CERTIFICATE = "<PATH_TO_YOUR_CERT>"
-PRIVATE_KEY = "<PATH_TO_PRIVATE_KEY>"
-AWS_IOT_TOPIC = "<YOUR_IOT_TOPIC>"
-AWS_IOT_ENDPOINT = "<YOUR_IOT_ENDPOINT>"
+ROOT_CA = "/home/blitz/certs/robotcerts/root-CA.crt"
+CERTIFICATE = "/home/blitz/certs/robotcerts/certificate.pem.crt"
+PRIVATE_KEY = "/home/blitz/certs/robotcerts/private.pem.key"
+AWS_IOT_TOPIC = "$aws/things/awsiotdemo/shadow/update"
+AWS_IOT_ENDPOINT = "a1j88xr8j1m132.iot.us-west-2.amazonaws.com"
 
 def on_connect(client, userdata, flags, rc):
 	print("Connected with result code "+str(rc))
