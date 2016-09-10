@@ -59,12 +59,15 @@ deadzone = {
     "xRight": 360,
     "xLeft": 500,
     "yUp": 300,
-    "yDown": 330
+    "yDown": 330,
+    "zForward": 350,
+    "zBackward": 500
 }
 
 current_status = {
     "base": 0,
-    "elbow": 0
+    "elbow": 0,
+    "shoulder": 0
     }
 
 def on_message(client, userdata, msg):
@@ -89,6 +92,12 @@ def on_message(client, userdata, msg):
     if tev_json_obj["coordinates"]["yAxis"] > deadzone["yDown"] and (current_status["elbow"] == 0):
         arm.elbow.down(None)
         current_status["elbow"] = -1
+    if tev_json_obj["coordinates"]["zAxis"] < deadzone["zForward"] and (current_status["shoulder"] == 0):
+        arm.shoulder.down(None)
+        current_status["shoulder"] = -1
+    if tev_json_obj["coordinates"]["zAxis"] > deadzone["zBackward"] and (current_status["shoulder"] == 0):
+        arm.shoulder.up(None)
+        current_status["shoulder"] = 1
 
     if (tev_json_obj["coordinates"]["xAxis"] >= deadzone["xRight"]) and (tev_json_obj["coordinates"]["xAxis"] <= deadzone["xLeft"]):
         arm.base.stop()
@@ -96,6 +105,9 @@ def on_message(client, userdata, msg):
     if (tev_json_obj["coordinates"]["yAxis"] >= deadzone["yUp"]) and (tev_json_obj["coordinates"]["yAxis"] <= deadzone["yDown"]):
         arm.elbow.stop()
         current_status["elbow"] = 0
+    if (tev_json_obj["coordinates"]["zAxis"] <= deadzone["zForward"]) and (tev_json_obj["coordinates"]["zAxis"] >= deadzone["zBackward"]):
+        arm.shoulder.stop()
+        current_status["shoulder"] = 0
     
 def go_to_sleep(active):
 
