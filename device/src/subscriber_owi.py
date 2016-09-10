@@ -16,18 +16,11 @@ software license above.
 import paho.mqtt.client as paho
 import ssl
 import ast
-from Adafruit_PWM_Servo_Driver import PWM
 import json
 import schedule, time
-
-pins = {
-    "xAxis": 0,
-    "yAxis": 1,
-    "zAxis": 2,
-    "head": 3,
-    "rightEye": 8,
-    "leftEye": 9
-}
+from roboarm import Arm
+from pygame import constants
+import pygame
 
 ROOT_CA = "/home/pi/awsiotrobot/robotcerts/root-CA.crt"
 CERTIFICATE = "/home/pi/awsiotrobot/robotcerts/certificate.pem.crt"
@@ -40,26 +33,10 @@ var_payload = ''
 # Default active flag is false.
 active = False
 
-# Initialise the PWM device using the default address
-pwm = PWM(0x40)
+arm = Arm()
+#self._init_pygame()
+#self._init_actions()
 
-# Note if you'd like more debug output you can instead run:
-# pwm = PWM(0x40, debug=True)
-
-pwm.setPWMFreq(60)  # Set frequency to 60 Hz.
-
-'''
-This function sets the servo pulse and channel.
-'''
-def set_servo_pulse(channel, pulse):
-    pulseLength = 1000000                   # 1,000,000 us per second
-    pulseLength /= 60                       # 60 Hz
-    print "%d us per period" % pulseLength
-    pulseLength /= 4096                     # 12 bits of resolution
-    print "%d us per bit" % pulseLength
-    pulse *= 1000
-    pulse /= pulseLength
-    pwm.setPWM(channel, 0, pulse)
 
 '''
 This function is invoked when the mqtt client makes a successful connection. It subscribes the client to the AWS IoT Topic.
@@ -78,6 +55,18 @@ This function is invoked when a new message is received by the MQTT client. It s
 @param userdata
 @param msg The message that was recieved.
 '''
+deadzone = {
+    "xRight": 360,
+    "xLeft": 500,
+    "yUp": 300,
+    "yDown": 330
+}
+
+current_status = {
+    "base": 0,
+    "elbow": 0
+    }
+
 def on_message(client, userdata, msg):
 
     print(msg.topic+" "+str(msg.payload))
@@ -88,20 +77,26 @@ def on_message(client, userdata, msg):
     # The message is in JSON format
     tev_json_obj = json.loads(msg.payload)
 
-    pwm.setPWM(pins["xAxis"], 0, tev_json_obj["coordinates"]["xAxis"])
-    pwm.setPWM(pins["yAxis"], 0, tev_json_obj["coordinates"]["yAxis"])
-    pwm.setPWM(pins["zAxis"], 0, tev_json_obj["coordinates"]["zAxis"])
+    if (tev_json_obj["coordinates"]["xAxis"] < deadzone["xRight"]) and (current_status["base"] == 0):
+        arm.base.rotate_counter(None)
+        current_status["base"] = 1
+    if tev_json_obj["coordinates"]["xAxis"] > deadzone["xLeft"] and (current_status["base"] == 0):
+        arm.base.rotate_clock(None)
+        current_status["base"] = -1
+    if tev_json_obj["coordinates"]["yAxis"] < deadzone["yUp"] and (current_status["elbow"] == 0):
+        arm.elbow.up(None)
+        current_status["elbow"] = 1
+    if tev_json_obj["coordinates"]["yAxis"] > deadzone["yDown"] and (current_status["elbow"] == 0):
+        arm.elbow.down(None)
+        current_status["elbow"] = -1
 
-    pwm.setPWM(pins["rightEye"], 0, 300)
-    pwm.setPWM(pins["leftEye"], 0, 300)
-
-    if tev_json_obj["coordinates"]['clockwiseness'] == 0:
-        print('tapStatus is counterclockwise')
-        pwm.setPWM(pins["head"], 0, 200)
-    if tev_json_obj["coordinates"]['clockwiseness'] == 1:
-        print('tapStatus is clockwise')
-        pwm.setPWM(pins["head"], 0, 500)
-
+    if (tev_json_obj["coordinates"]["xAxis"] >= deadzone["xRight"]) and (tev_json_obj["coordinates"]["xAxis"] <= deadzone["xLeft"]):
+        arm.base.stop()
+        current_status["base"] = 0
+    if (tev_json_obj["coordinates"]["yAxis"] >= deadzone["yUp"]) and (tev_json_obj["coordinates"]["yAxis"] <= deadzone["yDown"]):
+        arm.elbow.stop()
+        current_status["elbow"] = 0
+    
 def go_to_sleep(active):
 
     if (active):
@@ -109,15 +104,19 @@ def go_to_sleep(active):
         active = False
     else:
         print("Not active... Sleeping...");
-        pwm.setPWM(pins["xAxis"], 0, 0)
-        pwm.setPWM(pins["yAxis"], 0, 0)
-        pwm.setPWM(pins["zAxis"], 0, 0)
-        pwm.setPWM(pins["rightEye"], 4, 0)
-        pwm.setPWM(pins["leftEye"], 5, 0)
+        arm.grips.stop()
+        arm.wrist.stop()
+        arm.elbow.stop()
+        arm.shoulder.stop()
+        arm.base.stop()
+
 
 # The main application runs the Paho MQTT Client
 if __name__ == "__main__":
 
+    arm.elbow.up(timeout=0.3)
+    arm.elbow.down(timeout=0.3)
+    
     mqttc = paho.Client()
     mqttc.on_connect = on_connect
     mqttc.on_message = on_message

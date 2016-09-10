@@ -3,9 +3,9 @@
 import paho.mqtt.client as mqtt
 import ssl
 
-ROOT_CA = "/home/blitz/certs/robotcerts/root-CA.crt"
-CERTIFICATE = "/home/blitz/certs/robotcerts/certificate.pem.crt"
-PRIVATE_KEY = "/home/blitz/certs/robotcerts/private.pem.key"
+ROOT_CA = "/home/pi/awsiotrobot/robotcerts/root-CA.crt"
+CERTIFICATE = "/home/pi/awsiotrobot/robotcerts/certificate.pem.crt"
+PRIVATE_KEY = "/home/pi/awsiotrobot/robotcerts/private.pem.key"
 AWS_IOT_TOPIC = "$aws/things/awsiotdemo/shadow/update"
 AWS_IOT_ENDPOINT = "a1j88xr8j1m132.iot.us-west-2.amazonaws.com"
 
